@@ -1,0 +1,41 @@
+{
+  "type": "panel",
+  "items": {
+    "apiToken": {
+      "type": "password",
+      "label": "API-Token",
+      "help": "Token aus den erweiterten Einstellungen der my-PV Cloud (Aktivierung kann bis zu 10 Minuten dauern)",
+      "sm": 12
+    },
+    "serialNumber": {
+      "type": "text",
+      "label": "Seriennummer des Geräts",
+      "help": "Seriennummer des AC ELWA 2 / AC·THOR / AC·THOR 9s (z.B. 2001001234567890)",
+      "sm": 12
+    },
+    "_header_polling": {
+      "type": "header",
+      "text": "Polling-Einstellungen",
+      "size": 2,
+      "sm": 12
+    },
+    "pollInterval": {
+      "type": "number",
+      "label": "Abfrageintervall (Sekunden)",
+      "help": "Wie oft sollen die Daten abgerufen werden? (Minimum: 10 Sekunden)",
+      "min": 10,
+      "max": 3600,
+      "default": 60,
+      "sm": 6
+    },
+    "validForMinutes": {
+      "type": "number",
+      "label": "Leistungsvorgabe gültig für (Minuten)",
+      "help": "Wie lange ist eine gesetzte Leistungsvorgabe gültig?",
+      "min": 1,
+      "max": 60,
+      "default": 10,
+      "sm": 6
+    }
+  }
+}
