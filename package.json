@@ -1,6 +1,6 @@
 {
   "name": "iobroker.my-pv",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "ioBroker Adapter für die my-PV Cloud API (AC ELWA 2, AC·THOR, AC·THOR 9s)",
   "author": {
     "name": "ioBroker my-PV Adapter",

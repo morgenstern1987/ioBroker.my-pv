@@ -1,8 +1,12 @@
 {
   "common": {
     "name": "my-pv",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "news": {
+      "1.0.0": {
+        "en": "First stable release – full API support, all device fields with correct units and roles",
+        "de": "Erstes stabiles Release – vollständige API-Unterstützung, alle Gerätefelder mit korrekten Einheiten und Rollen"
+      },
       "0.1.0": {
         "en": "Initial release",
         "de": "Erstveröffentlichung"
