@@ -5,47 +5,77 @@
     "news": {
       "1.0.0": {
         "en": "First stable release – full API support, all device fields with correct units and roles",
-        "de": "Erstes stabiles Release – vollständige API-Unterstützung, alle Gerätefelder mit korrekten Einheiten und Rollen"
-      },
-      "0.1.0": {
-        "en": "Initial release",
-        "de": "Erstveröffentlichung"
+        "de": "Erstes stabiles Release – vollständige API-Unterstützung, alle Felder mit Einheiten und Rollen",
+        "ru": "Первый стабильный релиз",
+        "pt": "Primeiro lançamento estável",
+        "nl": "Eerste stabiele release",
+        "fr": "Première version stable",
+        "it": "Prima versione stabile",
+        "es": "Primera versión estable",
+        "pl": "Pierwsze stabilne wydanie",
+        "uk": "Перший стабільний реліз",
+        "zh-cn": "第一个稳定版本"
       }
     },
-    "title": "my-PV Cloud",
     "titleLang": {
-      "en": "my-PV Cloud Adapter",
-      "de": "my-PV Cloud Adapter"
+      "en": "my-PV Cloud",
+      "de": "my-PV Cloud",
+      "ru": "my-PV Cloud",
+      "pt": "my-PV Cloud",
+      "nl": "my-PV Cloud",
+      "fr": "my-PV Cloud",
+      "it": "my-PV Cloud",
+      "es": "my-PV Cloud",
+      "pl": "my-PV Cloud",
+      "uk": "my-PV Cloud",
+      "zh-cn": "my-PV Cloud"
     },
     "desc": {
-      "en": "Adapter for my-PV Cloud API (AC ELWA 2, AC·THOR, AC·THOR 9s)",
-      "de": "Adapter für die my-PV Cloud API (AC ELWA 2, AC·THOR, AC·THOR 9s)"
+      "en": "Connects ioBroker to the my-PV Cloud API for AC ELWA 2, AC·THOR and AC·THOR 9s devices",
+      "de": "Verbindet ioBroker mit der my-PV Cloud API für AC ELWA 2, AC·THOR und AC·THOR 9s Geräte",
+      "ru": "Подключает ioBroker к облачному API my-PV",
+      "pt": "Conecta o ioBroker à API Cloud my-PV",
+      "nl": "Verbindt ioBroker met de my-PV Cloud API",
+      "fr": "Connecte ioBroker à l'API Cloud my-PV",
+      "it": "Collega ioBroker all'API Cloud my-PV",
+      "es": "Conecta ioBroker con la API Cloud my-PV",
+      "pl": "Łączy ioBroker z API Cloud my-PV",
+      "uk": "Підключає ioBroker до хмарного API my-PV",
+      "zh-cn": "将ioBroker连接到my-PV云API"
     },
-    "authors": ["ioBroker my-PV Adapter"],
-    "keywords": ["my-pv", "solar", "AC-THOR", "AC-ELWA", "photovoltaic"],
-    "license": "MIT",
+    "authors": ["morgenstern1987"],
+    "keywords": ["my-pv", "solar", "AC-THOR", "AC-ELWA", "photovoltaic", "energy"],
+    "licenseInformation": {
+      "license": "MIT",
+      "type": "free"
+    },
     "platform": "Javascript/Node.js",
-    "main": "main.js",
     "icon": "admin/my-pv.png",
+    "extIcon": "https://raw.githubusercontent.com/morgenstern1987/ioBroker.my-pv/main/admin/my-pv.png",
     "enabled": true,
-    "extIcon": "admin/my-pv.png",
-    "readme": "",
+    "readme": "https://github.com/morgenstern1987/ioBroker.my-pv/blob/main/README.md",
     "loglevel": "info",
     "mode": "daemon",
     "type": "energy",
     "connectionType": "cloud",
     "dataSource": "poll",
+    "compact": true,
+    "tier": 2,
     "adminUI": {
       "config": "json"
     },
-    "adminColumns": []
+    "dependencies": [
+      {
+        "js-controller": ">=5.0.19"
+      }
+    ],
+    "globalDependencies": []
   },
   "native": {
     "apiToken": "",
     "serialNumber": "",
     "pollInterval": 60,
-    "fetchDeviceStatus": true,
-    "fetchPowerData": true
+    "validForMinutes": 10
   },
   "objects": [],
   "instanceObjects": [

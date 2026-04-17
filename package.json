@@ -1,12 +1,12 @@
 {
   "name": "iobroker.my-pv",
   "version": "1.0.0",
-  "description": "ioBroker Adapter für die my-PV Cloud API (AC ELWA 2, AC·THOR, AC·THOR 9s)",
+  "description": "ioBroker adapter for the my-PV Cloud API (AC ELWA 2, AC·THOR, AC·THOR 9s)",
   "author": {
-    "name": "ioBroker my-PV Adapter",
+    "name": "morgenstern1987",
     "email": ""
   },
-  "homepage": "",
+  "homepage": "https://github.com/morgenstern1987/ioBroker.my-pv",
   "license": "MIT",
   "keywords": [
     "ioBroker",
@@ -14,18 +14,22 @@
     "solar",
     "AC-THOR",
     "AC-ELWA",
-    "photovoltaic"
+    "photovoltaic",
+    "energy"
   ],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/morgenstern1987/ioBroker.my-pv.git"
+  },
+  "bugs": {
+    "url": "https://github.com/morgenstern1987/ioBroker.my-pv/issues"
   },
   "dependencies": {
-    "@iobroker/adapter-core": "^3.0.4",
+    "@iobroker/adapter-core": "^3.2.2",
     "axios": "^1.6.0"
   },
   "devDependencies": {
-    "@iobroker/testing": "^4.1.0",
+    "@iobroker/testing": "^4.1.3",
     "@types/node": "^20.0.0",
     "typescript": "^5.3.0"
   },
