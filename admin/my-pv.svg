@@ -1,0 +1,43 @@
+<svg width="256" height="256" viewBox="0 0 680 680" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>my-PV Logo</title>
+<circle cx="340" cy="340" r="300" fill="#1A1A2E"/>
+<circle cx="340" cy="340" r="300" fill="none" stroke="#E8640A" stroke-width="18"/>
+<defs><clipPath id="cc"><circle cx="340" cy="340" r="300"/></clipPath></defs>
+<g clip-path="url(#cc)">
+<rect x="40" y="480" width="600" height="220" fill="#0F3460"/>
+<circle cx="340" cy="200" r="70" fill="#F4A020"/>
+<line x1="340" y1="95" x2="340" y2="75" stroke="#F4A020" stroke-width="8" stroke-linecap="round"/>
+<line x1="340" y1="305" x2="340" y2="325" stroke="#F4A020" stroke-width="8" stroke-linecap="round"/>
+<line x1="235" y1="200" x2="215" y2="200" stroke="#F4A020" stroke-width="8" stroke-linecap="round"/>
+<line x1="445" y1="200" x2="465" y2="200" stroke="#F4A020" stroke-width="8" stroke-linecap="round"/>
+<line x1="262" y1="127" x2="248" y2="113" stroke="#F4A020" stroke-width="8" stroke-linecap="round"/>
+<line x1="418" y1="273" x2="432" y2="287" stroke="#F4A020" stroke-width="8" stroke-linecap="round"/>
+<line x1="418" y1="127" x2="432" y2="113" stroke="#F4A020" stroke-width="8" stroke-linecap="round"/>
+<line x1="262" y1="273" x2="248" y2="287" stroke="#F4A020" stroke-width="8" stroke-linecap="round"/>
+<rect x="230" y="400" width="220" height="160" rx="4" fill="#16213E"/>
+<polygon points="200,405 340,290 480,405" fill="#E8640A"/>
+<polygon points="200,405 340,290 480,405" fill="none" stroke="#F4A020" stroke-width="3" stroke-linejoin="round"/>
+<g transform="rotate(-35, 340, 340)">
+<rect x="270" y="310" width="55" height="38" rx="3" fill="#0F3460" stroke="#4A90D9" stroke-width="2"/>
+<line x1="270" y1="323" x2="325" y2="323" stroke="#4A90D9" stroke-width="1"/>
+<line x1="270" y1="336" x2="325" y2="336" stroke="#4A90D9" stroke-width="1"/>
+<line x1="297" y1="310" x2="297" y2="348" stroke="#4A90D9" stroke-width="1"/>
+<rect x="335" y="310" width="55" height="38" rx="3" fill="#0F3460" stroke="#4A90D9" stroke-width="2"/>
+<line x1="335" y1="323" x2="390" y2="323" stroke="#4A90D9" stroke-width="1"/>
+<line x1="335" y1="336" x2="390" y2="336" stroke="#4A90D9" stroke-width="1"/>
+<line x1="362" y1="310" x2="362" y2="348" stroke="#4A90D9" stroke-width="1"/>
+</g>
+<rect x="305" y="480" width="70" height="80" rx="4" fill="#E8640A" opacity="0.7"/>
+<circle cx="362" cy="522" r="5" fill="#F4A020"/>
+<rect x="248" y="430" width="50" height="40" rx="3" fill="#4A90D9" opacity="0.6"/>
+<line x1="273" y1="430" x2="273" y2="470" stroke="#16213E" stroke-width="2"/>
+<line x1="248" y1="450" x2="298" y2="450" stroke="#16213E" stroke-width="2"/>
+<rect x="382" y="430" width="50" height="40" rx="3" fill="#4A90D9" opacity="0.6"/>
+<line x1="407" y1="430" x2="407" y2="470" stroke="#16213E" stroke-width="2"/>
+<line x1="382" y1="450" x2="432" y2="450" stroke="#16213E" stroke-width="2"/>
+<path d="M340 278 L340 304" fill="none" stroke="#F4A020" stroke-width="4" stroke-linecap="round" stroke-dasharray="8,5" opacity="0.9"/>
+<polygon points="340,316 332,300 348,300" fill="#F4A020" opacity="0.9"/>
+</g>
+<circle cx="340" cy="340" r="291" fill="none" stroke="#F4A020" stroke-width="2" opacity="0.3"/>
+<text x="340" y="618" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="52" font-weight="700" fill="#F4A020" letter-spacing="4">my-PV</text>
+</svg>
