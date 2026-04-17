@@ -7,7 +7,6 @@
 <p align="center">
   <a href="https://github.com/morgenstern1987/ioBroker.my-pv/releases"><img src="https://img.shields.io/github/v/release/morgenstern1987/ioBroker.my-pv" alt="Release" /></a>
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node.js" />
-  <img src="https://img.shields.io/badge/license-MIT-blue" alt="License" />
 </p>
 
 Verbindet ioBroker mit der **my-PV Cloud API** und stellt alle Gerätedaten als ioBroker-Datenpunkte bereit. Unterstützt werden alle IoT-fähigen my-PV Geräte:
@@ -147,6 +146,4 @@ setState('my-pv.0.2001001234567890.control.setPower', 3000);
 
 ---
 
-## Lizenz
 
-MIT © 2024 – morgenstern1987
