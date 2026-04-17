@@ -110,7 +110,7 @@ const FIELD_DEFINITIONS = {
     schicht_flag:       { name: "Schichtladung Status",                      unit: "",    role: "indicator",         type: "number" },
     act_night_flag:     { name: "Tag/Nacht",                                 unit: "",    role: "indicator",         type: "number" },
     wp_flag:            { name: "Wärmepumpe Status",                         unit: "",    role: "indicator",         type: "number" },
-    ecarstate:          { name: "E-Auto Status",                             unit: "",    role: "value",             type: "number" },
+    ecarstate:          { name: "E-Auto Status",                             unit: "",    role: "value",             type: "mixed" },
     load_state:         { name: "Last angeschlossen",                        unit: "",    role: "indicator",         type: "number",
                           states: { 0: "Keine Last", 1: "Verbunden" } },
 
@@ -149,7 +149,7 @@ const FIELD_DEFINITIONS = {
     fan_speed:          { name: "Lüfter Stufe",                              unit: "",    role: "value",             type: "number" },
     pump_pwm:           { name: "Pumpe PWM",                                 unit: "",    role: "value",             type: "number" },
     ecarboostctr:       { name: "E-Auto Boostzeit",                          unit: "min", role: "value",             type: "number" },
-    legboostnext:       { name: "Nächster Legionellen-Boost",                unit: "Tage",role: "value",             type: "number" },
+    legboostnext:       { name: "Nächster Legionellen-Boost",                unit: "Tage",role: "value",             type: "mixed" },
     upd_state:          { name: "Update Status",                             unit: "",    role: "value",             type: "number" },
     upd_percentage:     { name: "Update Fortschritt",                        unit: "%",   role: "value",             type: "number" },
     rel1_out:           { name: "Relais Status",                             unit: "",    role: "indicator",         type: "number" },
@@ -315,7 +315,7 @@ class MyPvAdapter extends utils.Adapter {
     }
 
     async _ensureState(id, common) {
-        await this.setObjectNotExistsAsync(id, { type: "state", common: { ...common }, native: {} });
+        await this.extendObjectAsync(id, { type: "state", common: { ...common }, native: {} });
     }
 
     async _writeStatesFromObject(sn, channel, data) {
@@ -337,6 +337,9 @@ class MyPvAdapter extends utils.Adapter {
             if (def?.type === "number" && typeof val === "string") {
                 const parsed = parseFloat(val);
                 val = isNaN(parsed) ? null : parsed;
+            } else if (def?.type === "mixed" && typeof val === "string") {
+                const parsed = parseFloat(val);
+                if (!isNaN(parsed)) val = parsed;
             } else if (def?.type === "boolean" && typeof val === "string") {
                 val = val === "true" || val === "1";
             }
