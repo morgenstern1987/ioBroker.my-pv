@@ -50,7 +50,7 @@
       "type": "free"
     },
     "platform": "Javascript/Node.js",
-    "icon": "admin/my-pv.svg",
+    "icon": "my-pv.svg",
     "extIcon": "https://raw.githubusercontent.com/morgenstern1987/ioBroker.my-pv/main/admin/my-pv.svg",
     "enabled": true,
     "readme": "https://github.com/morgenstern1987/ioBroker.my-pv/blob/main/README.md",
