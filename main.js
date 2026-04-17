@@ -333,6 +333,14 @@ class MyPvAdapter extends utils.Adapter {
 
             let val = Array.isArray(rawValue) ? JSON.stringify(rawValue) : rawValue;
 
+            // Typ erzwingen falls Definition vorhanden (API liefert manchmal String statt Number)
+            if (def?.type === "number" && typeof val === "string") {
+                const parsed = parseFloat(val);
+                val = isNaN(parsed) ? null : parsed;
+            } else if (def?.type === "boolean" && typeof val === "string") {
+                val = val === "true" || val === "1";
+            }
+
             // Skalierungsfaktor anwenden (z.B. 0.1 für Temp/Strom)
             if (def?.factor && typeof val === "number") {
                 val = Math.round(val * def.factor * 10) / 10;
