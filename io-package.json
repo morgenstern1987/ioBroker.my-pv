@@ -33,21 +33,22 @@
     "desc": {
       "en": "Connects ioBroker to the my-PV Cloud API for AC ELWA 2, AC·THOR and AC·THOR 9s devices",
       "de": "Verbindet ioBroker mit der my-PV Cloud API für AC ELWA 2, AC·THOR und AC·THOR 9s Geräte",
-      "ru": "Подключает ioBroker к облачному API my-PV",
-      "pt": "Conecta o ioBroker à API Cloud my-PV",
-      "nl": "Verbindt ioBroker met de my-PV Cloud API",
-      "fr": "Connecte ioBroker à l'API Cloud my-PV",
-      "it": "Collega ioBroker all'API Cloud my-PV",
-      "es": "Conecta ioBroker con la API Cloud my-PV",
-      "pl": "Łączy ioBroker z API Cloud my-PV",
-      "uk": "Підключає ioBroker до хмарного API my-PV",
-      "zh-cn": "将ioBroker连接到my-PV云API"
+      "ru": "Подключает ioBroker к облачному API my-PV для устройств AC ELWA 2, AC·THOR и AC·THOR 9s",
+      "pt": "Conecta o ioBroker à API Cloud my-PV para dispositivos AC ELWA 2, AC·THOR e AC·THOR 9s",
+      "nl": "Verbindt ioBroker met de my-PV Cloud API voor AC ELWA 2, AC·THOR en AC·THOR 9s apparaten",
+      "fr": "Connecte ioBroker à l'API Cloud my-PV pour les appareils AC ELWA 2, AC·THOR et AC·THOR 9s",
+      "it": "Collega ioBroker all'API Cloud my-PV per i dispositivi AC ELWA 2, AC·THOR e AC·THOR 9s",
+      "es": "Conecta ioBroker con la API Cloud my-PV para dispositivos AC ELWA 2, AC·THOR y AC·THOR 9s",
+      "pl": "Łączy ioBroker z API Cloud my-PV dla urządzeń AC ELWA 2, AC·THOR i AC·THOR 9s",
+      "uk": "Підключає ioBroker до хмарного API my-PV для пристроїв AC ELWA 2, AC·THOR та AC·THOR 9s",
+      "zh-cn": "将ioBroker连接到my-PV云API，支持AC ELWA 2、AC·THOR和AC·THOR 9s设备"
     },
     "authors": ["morgenstern1987"],
-    "keywords": ["my-pv", "solar", "AC-THOR", "AC-ELWA", "photovoltaic", "energy"],
+    "keywords": ["my-pv", "solar", "AC-THOR", "AC-ELWA", "photovoltaic", "energy", "hot-water"],
     "licenseInformation": {
       "license": "MIT",
-      "type": "free"
+      "type": "free",
+      "link": "https://github.com/morgenstern1987/ioBroker.my-pv/blob/main/LICENSE"
     },
     "platform": "Javascript/Node.js",
     "icon": "my-pv.svg",
@@ -69,8 +70,14 @@
         "js-controller": ">=5.0.19"
       }
     ],
-    "globalDependencies": []
+    "globalDependencies": [
+      {
+        "admin": ">=6.13.16"
+      }
+    ]
   },
+  "encryptedNative": ["apiToken"],
+  "protectedNative": ["apiToken"],
   "native": {
     "apiToken": "",
     "serialNumber": "",
@@ -91,7 +98,7 @@
       "_id": "info.connection",
       "type": "state",
       "common": {
-        "name": "Connection to my-PV Cloud",
+        "name": "Device or service connected",
         "type": "boolean",
         "role": "indicator.connected",
         "read": true,

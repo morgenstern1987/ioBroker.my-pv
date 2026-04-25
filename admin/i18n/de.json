@@ -1,0 +1,16 @@
+{
+  "Connection": "Verbindung",
+  "Polling": "Abfrage",
+  "my-PV Cloud Authentication": "my-PV Cloud Authentifizierung",
+  "API Token": "API-Token",
+  "Generate token in the my-PV Cloud advanced settings (activation may take up to 10 minutes)": "Token in den erweiterten Einstellungen der my-PV Cloud generieren (Aktivierung kann bis zu 10 Minuten dauern)",
+  "Device": "Gerät",
+  "Serial number": "Seriennummer",
+  "Serial number of the AC ELWA 2 / AC·THOR / AC·THOR 9s (e.g. 2001001234567890)": "Seriennummer des AC ELWA 2 / AC·THOR / AC·THOR 9s (z.B. 2001001234567890)",
+  "Serial number is required": "Seriennummer ist erforderlich",
+  "Polling settings": "Abfrageeinstellungen",
+  "Poll interval": "Abfrageintervall",
+  "How often to fetch device data (minimum 10 seconds)": "Wie oft Gerätedaten abgerufen werden (Minimum 10 Sekunden)",
+  "Power setpoint validity": "Gültigkeitsdauer der Leistungsvorgabe",
+  "How long a power setpoint remains active": "Wie lange eine Leistungsvorgabe aktiv bleibt"
+}

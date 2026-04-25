@@ -1,41 +1,78 @@
 {
-  "type": "panel",
+  "i18n": true,
+  "type": "tabs",
   "items": {
-    "apiToken": {
-      "type": "password",
-      "label": "API-Token",
-      "help": "Token aus den erweiterten Einstellungen der my-PV Cloud (Aktivierung kann bis zu 10 Minuten dauern)",
-      "sm": 12
+    "tabConnection": {
+      "type": "panel",
+      "label": "Connection",
+      "items": {
+        "_headerAuth": {
+          "type": "header",
+          "text": "my-PV Cloud Authentication",
+          "size": 2,
+          "sm": 12
+        },
+        "apiToken": {
+          "newLine": true,
+          "type": "password",
+          "label": "API Token",
+          "help": "Generate token in the my-PV Cloud advanced settings (activation may take up to 10 minutes)",
+          "sm": 12,
+          "md": 8
+        },
+        "_headerDevice": {
+          "newLine": true,
+          "type": "header",
+          "text": "Device",
+          "size": 2,
+          "sm": 12
+        },
+        "serialNumber": {
+          "newLine": true,
+          "type": "text",
+          "label": "Serial number",
+          "help": "Serial number of the AC ELWA 2 / AC·THOR / AC·THOR 9s (e.g. 2001001234567890)",
+          "sm": 12,
+          "md": 8,
+          "validator": "!!data.serialNumber",
+          "validatorErrorText": "Serial number is required"
+        }
+      }
     },
-    "serialNumber": {
-      "type": "text",
-      "label": "Seriennummer des Geräts",
-      "help": "Seriennummer des AC ELWA 2 / AC·THOR / AC·THOR 9s (z.B. 2001001234567890)",
-      "sm": 12
-    },
-    "_header_polling": {
-      "type": "header",
-      "text": "Polling-Einstellungen",
-      "size": 2,
-      "sm": 12
-    },
-    "pollInterval": {
-      "type": "number",
-      "label": "Abfrageintervall (Sekunden)",
-      "help": "Wie oft sollen die Daten abgerufen werden? (Minimum: 10 Sekunden)",
-      "min": 10,
-      "max": 3600,
-      "default": 60,
-      "sm": 6
-    },
-    "validForMinutes": {
-      "type": "number",
-      "label": "Leistungsvorgabe gültig für (Minuten)",
-      "help": "Wie lange ist eine gesetzte Leistungsvorgabe gültig?",
-      "min": 1,
-      "max": 60,
-      "default": 10,
-      "sm": 6
+    "tabPolling": {
+      "type": "panel",
+      "label": "Polling",
+      "items": {
+        "_headerPoll": {
+          "type": "header",
+          "text": "Polling settings",
+          "size": 2,
+          "sm": 12
+        },
+        "pollInterval": {
+          "newLine": true,
+          "type": "number",
+          "label": "Poll interval",
+          "help": "How often to fetch device data (minimum 10 seconds)",
+          "unit": "s",
+          "min": 10,
+          "max": 3600,
+          "default": 60,
+          "sm": 12,
+          "md": 6
+        },
+        "validForMinutes": {
+          "type": "number",
+          "label": "Power setpoint validity",
+          "help": "How long a power setpoint remains active",
+          "unit": "min",
+          "min": 1,
+          "max": 60,
+          "default": 10,
+          "sm": 12,
+          "md": 6
+        }
+      }
     }
   }
 }

@@ -1,246 +1,405 @@
 "use strict";
 
+/**
+ * ioBroker my-PV Cloud Adapter
+ *
+ * Connects ioBroker to the my-PV Cloud API for AC ELWA 2,
+ * AC·THOR and AC·THOR 9s devices.
+ *
+ * @license MIT
+ */
+
 const utils = require("@iobroker/adapter-core");
 const axios = require("axios");
 
 const BASE_URL = "https://api.my-pv.com/api/v1";
 
-// Vollständige Felddefinitionen aus der my-PV API Dokumentation
+// ─── Field definitions (my-PV API documentation) ──────────────────────────────
+// factor: raw value multiplier (e.g. 0.1 for values in 1/10 units)
+// states: discrete value mapping for multistate fields
+
+/** @type {Record<string, {name:string, unit:string, role:string, type:string, factor?:number, states?:Record<number,string>}>} */
 const FIELD_DEFINITIONS = {
-    // Leistung
-    power:              { name: "Leistung",                                  unit: "W",   role: "value.power",       type: "number" },
-    power_act:          { name: "Leistung AC THOR",                          unit: "W",   role: "value.power",       type: "number" },
-    power_ac9:          { name: "Leistung AC THOR 9s",                       unit: "W",   role: "value.power",       type: "number" },
-    power_elwa2:        { name: "Leistung ELWA 2",                           unit: "W",   role: "value.power",       type: "number" },
-    power_max:          { name: "Max. steuerbare Leistung (inkl. Slaves)",   unit: "W",   role: "value.power",       type: "number" },
-    power_nominal:      { name: "Nominalleistung (Typenschild)",             unit: "W",   role: "value.power",       type: "number" },
-    power_system:       { name: "Gesamtleistung inkl. Sekundärregler",       unit: "W",   role: "value.power",       type: "number" },
-    power_solar:        { name: "Solaranteil",                               unit: "W",   role: "value.power",       type: "number" },
-    power_grid:         { name: "Netzanteil",                                unit: "W",   role: "value.power",       type: "number" },
-    power_solar_act:    { name: "Solaranteil AC THOR",                       unit: "W",   role: "value.power",       type: "number" },
-    power_grid_act:     { name: "Netzanteil AC THOR",                        unit: "W",   role: "value.power",       type: "number" },
-    power_solar_ac9:    { name: "Solaranteil AC THOR 9s",                    unit: "W",   role: "value.power",       type: "number" },
-    power_grid_ac9:     { name: "Netzanteil AC THOR 9s",                     unit: "W",   role: "value.power",       type: "number" },
-    power1_solar:       { name: "Ausgang 1 Solaranteil",                     unit: "W",   role: "value.power",       type: "number" },
-    power1_grid:        { name: "Ausgang 1 Netzanteil",                      unit: "W",   role: "value.power",       type: "number" },
-    power2_solar:       { name: "Ausgang 2 Solaranteil",                     unit: "W",   role: "value.power",       type: "number" },
-    power2_grid:        { name: "Ausgang 2 Netzanteil",                      unit: "W",   role: "value.power",       type: "number" },
-    power3_solar:       { name: "Ausgang 3 Solaranteil",                     unit: "W",   role: "value.power",       type: "number" },
-    power3_grid:        { name: "Ausgang 3 Netzanteil",                      unit: "W",   role: "value.power",       type: "number" },
-    surplus:            { name: "Überschuss (Meter + Batterieladeleistung)", unit: "W",   role: "value.power",       type: "number" },
-    load_nom:           { name: "Nominelle Leistung (ohne EV, WP)",          unit: "W",   role: "value.power",       type: "number" },
+    // Power
+    power:              { name: "Power",                                    unit: "W",   role: "value.power",       type: "number" },
+    power_act:          { name: "Power AC THOR",                            unit: "W",   role: "value.power",       type: "number" },
+    power_ac9:          { name: "Power AC THOR 9s",                         unit: "W",   role: "value.power",       type: "number" },
+    power_elwa2:        { name: "Power ELWA 2",                             unit: "W",   role: "value.power",       type: "number" },
+    power_max:          { name: "Max controllable power (incl. slaves)",    unit: "W",   role: "value.power",       type: "number" },
+    power_nominal:      { name: "Nominal power (nameplate)",                unit: "W",   role: "value.power",       type: "number" },
+    power_system:       { name: "Total power incl. secondary controllers",  unit: "W",   role: "value.power",       type: "number" },
+    power_solar:        { name: "Solar share",                              unit: "W",   role: "value.power",       type: "number" },
+    power_grid:         { name: "Grid share",                               unit: "W",   role: "value.power",       type: "number" },
+    power_solar_act:    { name: "Solar share AC THOR",                      unit: "W",   role: "value.power",       type: "number" },
+    power_grid_act:     { name: "Grid share AC THOR",                       unit: "W",   role: "value.power",       type: "number" },
+    power_solar_ac9:    { name: "Solar share AC THOR 9s",                   unit: "W",   role: "value.power",       type: "number" },
+    power_grid_ac9:     { name: "Grid share AC THOR 9s",                    unit: "W",   role: "value.power",       type: "number" },
+    power1_solar:       { name: "Output 1 solar share",                     unit: "W",   role: "value.power",       type: "number" },
+    power1_grid:        { name: "Output 1 grid share",                      unit: "W",   role: "value.power",       type: "number" },
+    power2_solar:       { name: "Output 2 solar share",                     unit: "W",   role: "value.power",       type: "number" },
+    power2_grid:        { name: "Output 2 grid share",                      unit: "W",   role: "value.power",       type: "number" },
+    power3_solar:       { name: "Output 3 solar share",                     unit: "W",   role: "value.power",       type: "number" },
+    power3_grid:        { name: "Output 3 grid share",                      unit: "W",   role: "value.power",       type: "number" },
+    surplus:            { name: "Surplus (meter + battery charge power)",   unit: "W",   role: "value.power",       type: "number" },
+    load_nom:           { name: "Nominal power (excl. EV, heat pump)",      unit: "W",   role: "value.power",       type: "number" },
 
-    // Temperaturen (Rohwert in 0.1°C)
-    temp1:              { name: "Temperatur 1 (Wassertemperatur)",           unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
-    temp2:              { name: "Temperatur 2",                              unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
-    temp3:              { name: "Temperatur 3",                              unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
-    temp4:              { name: "Temperatur 4",                              unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
-    temp_ps:            { name: "Temperatur Leistungsteil",                  unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
-    tempInt1:           { name: "Interne Temperatur 1",                      unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
-    tempInt2:           { name: "Interne Temperatur 2",                      unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
-    tempInt3:           { name: "Interne Temperatur 3",                      unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
+    // Temperature (raw: 0.1 °C)
+    temp1:              { name: "Temperature 1 (water)",                    unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
+    temp2:              { name: "Temperature 2",                            unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
+    temp3:              { name: "Temperature 3",                            unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
+    temp4:              { name: "Temperature 4",                            unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
+    temp_ps:            { name: "Power stage temperature",                  unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
+    tempInt1:           { name: "Internal temperature 1",                   unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
+    tempInt2:           { name: "Internal temperature 2",                   unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
+    tempInt3:           { name: "Internal temperature 3",                   unit: "°C",  role: "value.temperature", type: "number", factor: 0.1 },
 
-    // Spannungen
-    volt_mains:         { name: "Eingangsspannung L1",                       unit: "V",   role: "value.voltage",     type: "number" },
-    volt_L2:            { name: "Eingangsspannung L2",                       unit: "V",   role: "value.voltage",     type: "number" },
-    volt_L3:            { name: "Eingangsspannung L3",                       unit: "V",   role: "value.voltage",     type: "number" },
-    volt_out:           { name: "Ausgangsspannung Leistungsteil",            unit: "V",   role: "value.voltage",     type: "number" },
-    volt_aux:           { name: "Spannung L2 an AUX-Relais",                 unit: "V",   role: "value.voltage",     type: "number" },
-    volt_bat:           { name: "Batteriespannung",                          unit: "mV",  role: "value.voltage",     type: "number" },
-    volt_solar:         { name: "PV-Spannung",                               unit: "mV",  role: "value.voltage",     type: "number" },
+    // Voltage
+    volt_mains:         { name: "Input voltage L1",                         unit: "V",   role: "value.voltage",     type: "number" },
+    volt_L2:            { name: "Input voltage L2",                         unit: "V",   role: "value.voltage",     type: "number" },
+    volt_L3:            { name: "Input voltage L3",                         unit: "V",   role: "value.voltage",     type: "number" },
+    volt_out:           { name: "Output voltage power stage",               unit: "V",   role: "value.voltage",     type: "number" },
+    volt_aux:           { name: "Voltage L2 at AUX relay",                  unit: "V",   role: "value.voltage",     type: "number" },
+    volt_bat:           { name: "Battery voltage",                          unit: "mV",  role: "value.voltage",     type: "number" },
+    volt_solar:         { name: "PV voltage",                               unit: "mV",  role: "value.voltage",     type: "number" },
 
-    // Ströme (Rohwert in 0.1A)
-    curr_mains:         { name: "Netzstrom L1",                              unit: "A",   role: "value.current",     type: "number", factor: 0.1 },
-    curr_L2:            { name: "Netzstrom L2",                              unit: "A",   role: "value.current",     type: "number", factor: 0.1 },
-    curr_L3:            { name: "Netzstrom L3",                              unit: "A",   role: "value.current",     type: "number", factor: 0.1 },
+    // Current (raw: 0.1 A)
+    curr_mains:         { name: "Grid current L1",                          unit: "A",   role: "value.current",     type: "number", factor: 0.1 },
+    curr_L2:            { name: "Grid current L2",                          unit: "A",   role: "value.current",     type: "number", factor: 0.1 },
+    curr_L3:            { name: "Grid current L3",                          unit: "A",   role: "value.current",     type: "number", factor: 0.1 },
 
-    // Frequenz (Rohwert in mHz)
-    freq:               { name: "Netzfrequenz",                              unit: "Hz",  role: "value.frequency",   type: "number", factor: 0.001 },
+    // Frequency (raw: mHz)
+    freq:               { name: "Grid frequency",                           unit: "Hz",  role: "value.frequency",   type: "number", factor: 0.001 },
 
-    // Hausanschluss / Meter
-    m0sum:              { name: "Hausanschluss Gesamt",                      unit: "W",   role: "value.power",       type: "number" },
-    m0l1:               { name: "Hausanschluss L1",                          unit: "W",   role: "value.power",       type: "number" },
-    m0l2:               { name: "Hausanschluss L2",                          unit: "W",   role: "value.power",       type: "number" },
-    m0l3:               { name: "Hausanschluss L3",                          unit: "W",   role: "value.power",       type: "number" },
-    m0bat:              { name: "Batteriespeicher",                          unit: "W",   role: "value.power",       type: "number" },
+    // Grid connection / meter
+    m0sum:              { name: "Grid connection total",                     unit: "W",   role: "value.power",       type: "number" },
+    m0l1:               { name: "Grid connection L1",                        unit: "W",   role: "value.power",       type: "number" },
+    m0l2:               { name: "Grid connection L2",                        unit: "W",   role: "value.power",       type: "number" },
+    m0l3:               { name: "Grid connection L3",                        unit: "W",   role: "value.power",       type: "number" },
+    m0bat:              { name: "Battery storage",                           unit: "W",   role: "value.power",       type: "number" },
 
-    // Photovoltaik
-    m1sum:              { name: "Photovoltaik Gesamt",                       unit: "W",   role: "value.power",       type: "number" },
-    m1l1:               { name: "Photovoltaik L1",                           unit: "W",   role: "value.power",       type: "number" },
-    m1l2:               { name: "Photovoltaik L2",                           unit: "W",   role: "value.power",       type: "number" },
-    m1l3:               { name: "Photovoltaik L3",                           unit: "W",   role: "value.power",       type: "number" },
-    m1devstate:         { name: "PV Kommunikationsstatus",                   unit: "",    role: "value",             type: "number" },
+    // Photovoltaics
+    m1sum:              { name: "Photovoltaics total",                       unit: "W",   role: "value.power",       type: "number" },
+    m1l1:               { name: "Photovoltaics L1",                          unit: "W",   role: "value.power",       type: "number" },
+    m1l2:               { name: "Photovoltaics L2",                          unit: "W",   role: "value.power",       type: "number" },
+    m1l3:               { name: "Photovoltaics L3",                          unit: "W",   role: "value.power",       type: "number" },
+    m1devstate:         { name: "PV communication status",                   unit: "",    role: "value",             type: "number" },
 
-    // Batteriespeicher
-    m2sum:              { name: "Batteriespeicher Gesamt",                   unit: "W",   role: "value.power",       type: "number" },
-    m2l1:               { name: "Batteriespeicher L1",                       unit: "W",   role: "value.power",       type: "number" },
-    m2l2:               { name: "Batteriespeicher L2",                       unit: "W",   role: "value.power",       type: "number" },
-    m2l3:               { name: "Batteriespeicher L3",                       unit: "W",   role: "value.power",       type: "number" },
-    m2soc:              { name: "Batteriespeicher SoC",                      unit: "%",   role: "value.battery",     type: "number" },
-    m2state:            { name: "Batterie Status",                           unit: "",    role: "value",             type: "number" },
-    m2devstate:         { name: "Batteriespeicher Kommunikationsstatus",     unit: "",    role: "value",             type: "number" },
+    // Battery storage
+    m2sum:              { name: "Battery storage total",                     unit: "W",   role: "value.power",       type: "number" },
+    m2l1:               { name: "Battery storage L1",                        unit: "W",   role: "value.power",       type: "number" },
+    m2l2:               { name: "Battery storage L2",                        unit: "W",   role: "value.power",       type: "number" },
+    m2l3:               { name: "Battery storage L3",                        unit: "W",   role: "value.power",       type: "number" },
+    m2soc:              { name: "Battery SoC",                               unit: "%",   role: "value.battery",     type: "number" },
+    m2state:            { name: "Battery status",                            unit: "",    role: "value",             type: "number" },
+    m2devstate:         { name: "Battery storage communication status",      unit: "",    role: "value",             type: "number" },
 
-    // Ladestation
-    m3sum:              { name: "Ladestation Gesamt",                        unit: "W",   role: "value.power",       type: "number" },
-    m3l1:               { name: "Ladestation L1",                            unit: "W",   role: "value.power",       type: "number" },
-    m3l2:               { name: "Ladestation L2",                            unit: "W",   role: "value.power",       type: "number" },
-    m3l3:               { name: "Ladestation L3",                            unit: "W",   role: "value.power",       type: "number" },
-    m3soc:              { name: "Ladestation SoC",                           unit: "%",   role: "value.battery",     type: "number" },
-    m3devstate:         { name: "Ladestation Kommunikationsstatus",          unit: "",    role: "value",             type: "number" },
+    // EV charger
+    m3sum:              { name: "EV charger total",                          unit: "W",   role: "value.power",       type: "number" },
+    m3l1:               { name: "EV charger L1",                             unit: "W",   role: "value.power",       type: "number" },
+    m3l2:               { name: "EV charger L2",                             unit: "W",   role: "value.power",       type: "number" },
+    m3l3:               { name: "EV charger L3",                             unit: "W",   role: "value.power",       type: "number" },
+    m3soc:              { name: "EV charger SoC",                            unit: "%",   role: "value.battery",     type: "number" },
+    m3devstate:         { name: "EV charger communication status",           unit: "",    role: "value",             type: "number" },
 
-    // Wärmepumpe
-    m4sum:              { name: "Wärmepumpe Gesamt",                         unit: "W",   role: "value.power",       type: "number" },
-    m4l1:               { name: "Wärmepumpe L1",                             unit: "W",   role: "value.power",       type: "number" },
-    m4l2:               { name: "Wärmepumpe L2",                             unit: "W",   role: "value.power",       type: "number" },
-    m4l3:               { name: "Wärmepumpe L3",                             unit: "W",   role: "value.power",       type: "number" },
-    m4devstate:         { name: "Wärmepumpe Kommunikationsstatus",           unit: "",    role: "value",             type: "number" },
+    // Heat pump
+    m4sum:              { name: "Heat pump total",                           unit: "W",   role: "value.power",       type: "number" },
+    m4l1:               { name: "Heat pump L1",                              unit: "W",   role: "value.power",       type: "number" },
+    m4l2:               { name: "Heat pump L2",                              unit: "W",   role: "value.power",       type: "number" },
+    m4l3:               { name: "Heat pump L3",                              unit: "W",   role: "value.power",       type: "number" },
+    m4devstate:         { name: "Heat pump communication status",            unit: "",    role: "value",             type: "number" },
 
-    // Gerätestatus
-    screen_mode_flag:   { name: "Gerätestatus",                              unit: "",    role: "value",             type: "number",
-                          states: { 0: "Standby", 1: "Heizen", 2: "Heizen Sicherstellung", 3: "Heizen beendet", 4: "Keine Verbindung/Deaktiviert", 5: "Fehler", 6: "Sperrzeit aktiv" } },
-    ctrlstate:          { name: "Status Ansteuerung",                        unit: "",    role: "text",              type: "string" },
-    cloudstate:         { name: "Cloud Status",                              unit: "",    role: "value",             type: "number" },
-    ps_state:           { name: "Status Leistungsteil",                      unit: "",    role: "value",             type: "number" },
-    "9s_state":         { name: "Status Leistungsteil 9s",                   unit: "",    role: "value",             type: "number" },
-    error_state:        { name: "Fehlerbits",                                unit: "",    role: "indicator.alarm",   type: "number" },
-    ctrl_errors:        { name: "Fehlerbits Steuerung",                      unit: "",    role: "indicator.alarm",   type: "number" },
-    warnings:           { name: "Warnungsbits",                              unit: "",    role: "indicator.alarm",   type: "number" },
-    blockactive:        { name: "Block Status",                              unit: "",    role: "indicator",         type: "number" },
-    boostactive:        { name: "WW-Sicherstellung aktiv",                   unit: "",    role: "indicator",         type: "number" },
-    schicht_flag:       { name: "Schichtladung Status",                      unit: "",    role: "indicator",         type: "number" },
-    act_night_flag:     { name: "Tag/Nacht",                                 unit: "",    role: "indicator",         type: "number" },
-    wp_flag:            { name: "Wärmepumpe Status",                         unit: "",    role: "indicator",         type: "number" },
-    ecarstate:          { name: "E-Auto Status",                             unit: "",    role: "value",             type: "mixed" },
-    load_state:         { name: "Last angeschlossen",                        unit: "",    role: "indicator",         type: "number",
-                          states: { 0: "Keine Last", 1: "Verbunden" } },
+    // Device status
+    screen_mode_flag:   { name: "Device status",                             unit: "",    role: "value",             type: "number",
+                          states: { 0: "Standby", 1: "Heating", 2: "Heating (boost)", 3: "Heating finished", 4: "Disabled / No connection", 5: "Error", 6: "Blocked" } },
+    ctrlstate:          { name: "Control state",                             unit: "",    role: "text",              type: "string" },
+    cloudstate:         { name: "Cloud status",                              unit: "",    role: "value",             type: "number" },
+    ps_state:           { name: "Power stage status",                        unit: "",    role: "value",             type: "number" },
+    "9s_state":         { name: "Power stage 9s status",                     unit: "",    role: "value",             type: "number" },
+    error_state:        { name: "Error bits",                                unit: "",    role: "indicator.alarm",   type: "number" },
+    ctrl_errors:        { name: "Control error bits",                        unit: "",    role: "indicator.alarm",   type: "number" },
+    warnings:           { name: "Warning bits",                              unit: "",    role: "indicator.alarm",   type: "number" },
+    blockactive:        { name: "Block active",                              unit: "",    role: "indicator",         type: "number" },
+    boostactive:        { name: "Hot water boost active",                    unit: "",    role: "indicator",         type: "number" },
+    schicht_flag:       { name: "Layered charging active",                   unit: "",    role: "indicator",         type: "number" },
+    act_night_flag:     { name: "Day / night",                               unit: "",    role: "indicator",         type: "number" },
+    wp_flag:            { name: "Heat pump status",                          unit: "",    role: "indicator",         type: "number" },
+    ecarstate:          { name: "EV status",                                 unit: "",    role: "value",             type: "mixed"  },
+    load_state:         { name: "Load connected",                            unit: "",    role: "indicator",         type: "number",
+                          states: { 0: "No load", 1: "Connected" } },
+    bststrt:            { name: "Activate hot water boost",                  unit: "",    role: "value",             type: "number" },
+    relay_alarm:        { name: "Relay alarm",                               unit: "",    role: "indicator.alarm",   type: "number" },
+    relay_boost:        { name: "Relay boost",                               unit: "",    role: "indicator",         type: "number" },
+    rel1_out:           { name: "Relay status",                              unit: "",    role: "indicator",         type: "number" },
+    rel_selv:           { name: "SELV relay status",                         unit: "",    role: "indicator",         type: "number" },
+    pump_pwm:           { name: "Pump PWM",                                  unit: "",    role: "value",             type: "number" },
+    fan_speed:          { name: "Fan speed",                                 unit: "",    role: "value",             type: "number" },
+    ecarboostctr:       { name: "EV boost time",                             unit: "min", role: "value",             type: "number" },
+    legboostnext:       { name: "Next legionella boost",                     unit: "d",   role: "value",             type: "mixed"  },
 
-    // Geräteinformationen
-    device:             { name: "Gerätetyp",                                 unit: "",    role: "text",              type: "string" },
-    acthor9s:           { name: "Gerät (1=AC THOR, 2=AC THOR 9s)",          unit: "",    role: "value",             type: "number" },
-    fwversion:          { name: "Firmware Version",                          unit: "",    role: "text",              type: "string" },
-    fwversionlatest:    { name: "Neueste Firmware",                          unit: "",    role: "text",              type: "string" },
-    coversion:          { name: "Co-Controller Version",                     unit: "",    role: "text",              type: "string" },
-    coversionlatest:    { name: "Neueste Co-Controller FW",                  unit: "",    role: "text",              type: "string" },
-    psversion:          { name: "Leistungsteil Version",                     unit: "",    role: "text",              type: "string" },
-    psversionlatest:    { name: "Neueste Leistungsteil FW",                  unit: "",    role: "text",              type: "string" },
-    p9sversion:         { name: "Leistungsteil 9s Version",                  unit: "",    role: "text",              type: "string" },
-    p9sversionlatest:   { name: "Neueste Leistungsteil 9s FW",               unit: "",    role: "text",              type: "string" },
+    // Device info
+    device:             { name: "Device type",                               unit: "",    role: "text",              type: "string" },
+    acthor9s:           { name: "Device (1=AC THOR, 2=AC THOR 9s)",         unit: "",    role: "value",             type: "number" },
+    fwversion:          { name: "Firmware version",                          unit: "",    role: "text",              type: "string" },
+    fwversionlatest:    { name: "Latest firmware",                           unit: "",    role: "text",              type: "string" },
+    coversion:          { name: "Co-controller version",                     unit: "",    role: "text",              type: "string" },
+    coversionlatest:    { name: "Latest co-controller firmware",             unit: "",    role: "text",              type: "string" },
+    psversion:          { name: "Power stage version",                       unit: "",    role: "text",              type: "string" },
+    psversionlatest:    { name: "Latest power stage firmware",               unit: "",    role: "text",              type: "string" },
+    p9sversion:         { name: "Power stage 9s version",                    unit: "",    role: "text",              type: "string" },
+    p9sversionlatest:   { name: "Latest power stage 9s firmware",            unit: "",    role: "text",              type: "string" },
 
-    // Netzwerk
-    cur_ip:             { name: "IP-Adresse",                                unit: "",    role: "text",              type: "string" },
+    // Network
+    cur_ip:             { name: "IP address",                                unit: "",    role: "text",              type: "string" },
     cur_gw:             { name: "Gateway",                                   unit: "",    role: "text",              type: "string" },
-    cur_dns:            { name: "DNS-Server",                                unit: "",    role: "text",              type: "string" },
-    cur_sn:             { name: "Subnetzmaske",                              unit: "",    role: "text",              type: "string" },
-    cur_eth_mode:       { name: "Ethernet-Modus",                            unit: "",    role: "value",             type: "number",
+    cur_dns:            { name: "DNS server",                                unit: "",    role: "text",              type: "string" },
+    cur_sn:             { name: "Subnet mask",                               unit: "",    role: "text",              type: "string" },
+    cur_eth_mode:       { name: "Ethernet mode",                             unit: "",    role: "value",             type: "number",
                           states: { 0: "LAN", 1: "WLAN", 2: "AP" } },
-    wifi_signal:        { name: "WLAN-Signalstärke",                         unit: "",    role: "value",             type: "number" },
-    wifi_signal_strength:{ name: "WLAN-Signalstärke",                        unit: "dBm", role: "value",             type: "number" },
-    meter_ss:           { name: "WiFi Meter Signalstärke",                   unit: "%",   role: "value",             type: "number" },
-    meter_ssid:         { name: "WiFi Meter SSID",                           unit: "",    role: "text",              type: "string" },
+    wifi_signal:        { name: "WiFi signal strength",                      unit: "",    role: "value",             type: "number" },
+    wifi_signal_strength:{ name: "WiFi signal strength (dBm)",              unit: "dBm", role: "value",             type: "number" },
+    meter_ss:           { name: "WiFi meter signal strength",                unit: "%",   role: "value",             type: "number" },
+    meter_ssid:         { name: "WiFi meter SSID",                           unit: "",    role: "text",              type: "string" },
 
-    // Zeit
-    date:               { name: "Datum",                                     unit: "",    role: "text",              type: "string" },
-    loctime:            { name: "Uhrzeit",                                   unit: "",    role: "text",              type: "string" },
-    unixtime:           { name: "Unix-Zeit",                                 unit: "",    role: "value.time",        type: "number" },
+    // Time
+    date:               { name: "Date",                                      unit: "",    role: "text",              type: "string" },
+    loctime:            { name: "Local time",                                unit: "",    role: "text",              type: "string" },
+    unixtime:           { name: "Unix timestamp",                            unit: "",    role: "value.time",        type: "number" },
     uptime:             { name: "Uptime",                                    unit: "h",   role: "value",             type: "number" },
-    uptime_s:           { name: "Uptime",                                    unit: "s",   role: "value",             type: "number" },
+    uptime_s:           { name: "Uptime (seconds)",                          unit: "s",   role: "value",             type: "number" },
 
-    // Sonstiges
-    fan_speed:          { name: "Lüfter Stufe",                              unit: "",    role: "value",             type: "number" },
-    pump_pwm:           { name: "Pumpe PWM",                                 unit: "",    role: "value",             type: "number" },
-    ecarboostctr:       { name: "E-Auto Boostzeit",                          unit: "min", role: "value",             type: "number" },
-    legboostnext:       { name: "Nächster Legionellen-Boost",                unit: "Tage",role: "value",             type: "mixed" },
-    upd_state:          { name: "Update Status",                             unit: "",    role: "value",             type: "number" },
-    upd_percentage:     { name: "Update Fortschritt",                        unit: "%",   role: "value",             type: "number" },
-    rel1_out:           { name: "Relais Status",                             unit: "",    role: "indicator",         type: "number" },
-    rel_selv:           { name: "SELV Relais Status",                        unit: "",    role: "indicator",         type: "number" },
-    relay_alarm:        { name: "Relais Alarm",                              unit: "",    role: "indicator.alarm",   type: "number" },
-    relay_boost:        { name: "Relais Boost",                              unit: "",    role: "indicator",         type: "number" },
+    // Updates
+    upd_state:          { name: "Update status",                             unit: "",    role: "value",             type: "number" },
+    upd_percentage:     { name: "Update progress",                           unit: "%",   role: "value",             type: "number" },
 };
 
+// ─── Adapter class ─────────────────────────────────────────────────────────────
+
 class MyPvAdapter extends utils.Adapter {
+    /**
+     * @param {Partial<utils.AdapterOptions>} [options]
+     */
     constructor(options = {}) {
         super({ ...options, name: "my-pv" });
 
-        this.on("ready", this.onReady.bind(this));
+        // Only register handlers that are actually used
+        this.on("ready",       this.onReady.bind(this));
         this.on("stateChange", this.onStateChange.bind(this));
-        this.on("unload", this.onUnload.bind(this));
+        this.on("unload",      this.onUnload.bind(this));
 
-        this._pollTimer = null;
-        this._sn = null;
+        /** @type {ReturnType<typeof setTimeout> | null} */
+        this._pollTimeout = null;
+
+        /** @type {import("axios").AxiosInstance | null} */
         this._api = null;
+
+        /** @type {string} */
+        this._sn = "";
     }
 
+    // ─── Lifecycle ─────────────────────────────────────────────────────────────
+
     async onReady() {
-        this.setState("info.connection", false, true);
+        // Set connection state to false on startup
+        await this.setState("info.connection", false, true);
 
         const { apiToken, serialNumber, pollInterval } = this.config;
 
         if (!apiToken || !serialNumber) {
-            this.log.warn("API-Token oder Seriennummer fehlt – bitte in den Adaptereinstellungen eintragen.");
+            this.log.error("API token or serial number missing — please configure the adapter.");
+            this.terminate ? this.terminate(11) : process.exit(11);
             return;
         }
 
-        this._sn = serialNumber.trim();
+        this._sn = String(serialNumber).trim().replace(/[^A-Za-z0-9-_]/g, "");
+        if (!this._sn) {
+            this.log.error(`Invalid serial number: "${serialNumber}"`);
+            this.terminate ? this.terminate(11) : process.exit(11);
+            return;
+        }
 
         this._api = axios.create({
             baseURL: BASE_URL,
             headers: {
                 Authorization: `Bearer ${apiToken}`,
                 "Content-Type": "application/json",
-                "Accept": "application/json",
+                Accept: "application/json",
             },
-            timeout: 10000,
+            timeout: 10_000,
         });
 
+        // Create device channel and control states upfront
+        await this._setupObjects();
+
+        // Subscribe only to own writable states
         this.subscribeStates(`${this._sn}.control.*`);
 
+        // Check firmware compatibility once on startup
         const compatible = await this._checkFirmwareCompatible();
         if (!compatible) {
-            this.log.error("Firmware nicht kompatibel – bitte Gerät aktualisieren.");
+            this.log.error("Device firmware is not compatible with the my-PV API. Please update the device.");
+            this.terminate ? this.terminate(11) : process.exit(11);
             return;
         }
 
-        await this.fetchAll();
-
-        const intervalMs = Math.max(10, parseInt(pollInterval, 10) || 60) * 1000;
-        this._pollTimer = setInterval(() => this.fetchAll(), intervalMs);
+        // Immediate first poll
+        await this._poll();
     }
 
+    /**
+     * @param {() => void} callback
+     */
     onUnload(callback) {
-        if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
-        this.setState("info.connection", false, true);
-        callback();
+        try {
+            if (this._pollTimeout) {
+                this.clearTimeout(this._pollTimeout);
+                this._pollTimeout = null;
+            }
+            this._api = null;
+            // Fire-and-forget — we are shutting down
+            this.setState("info.connection", false, true);
+        } catch (_e) {
+            // ignore errors during cleanup
+        } finally {
+            callback();
+        }
     }
 
+    /**
+     * @param {string} id
+     * @param {ioBroker.State | null | undefined} state
+     */
     async onStateChange(id, state) {
+        // Only process commands (ack=false), ignore confirmations
         if (!state || state.ack) return;
+
         const sn = this._sn;
         if (!sn) return;
 
         if (id === `${this.namespace}.${sn}.control.setPower`) {
-            try {
-                const power = parseInt(state.val, 10) || 0;
-                await this._post(`/device/${sn}/power`, {
-                    power,
-                    validForMinutes: this.config.validForMinutes || 10,
-                    timeBoostOverride: 0,
-                    timeBoostValue: 0,
-                    legionellaBoostBlock: 1,
-                });
-                this.setState(id, { val: state.val, ack: true });
-                this.log.info(`Leistungsvorgabe gesetzt: ${power} W`);
-            } catch (err) {
-                this.log.error(`Fehler beim Setzen der Leistung: ${err.message}`);
-            }
+            await this._cmdSetPower(state);
         }
     }
 
+    // ─── Setup ─────────────────────────────────────────────────────────────────
+
+    async _setupObjects() {
+        const sn = this._sn;
+
+        // Device channel
+        await this.setObjectNotExistsAsync(sn, {
+            type: "device",
+            common: { name: `my-PV device ${sn}` },
+            native: {},
+        });
+
+        // Data channel
+        await this.setObjectNotExistsAsync(`${sn}.data`, {
+            type: "channel",
+            common: { name: "Device data" },
+            native: {},
+        });
+
+        // Control channel
+        await this.setObjectNotExistsAsync(`${sn}.control`, {
+            type: "channel",
+            common: { name: "Control" },
+            native: {},
+        });
+
+        // Writable: set power
+        await this.extendObjectAsync(`${sn}.control.setPower`, {
+            type: "state",
+            common: {
+                name:  "Set power",
+                type:  "number",
+                role:  "value.power",
+                unit:  "W",
+                min:   0,
+                read:  true,
+                write: true,
+                def:   0,
+            },
+            native: {},
+        });
+
+        // Writable: power validity duration
+        await this.extendObjectAsync(`${sn}.control.validForMinutes`, {
+            type: "state",
+            common: {
+                name:  "Power setpoint validity",
+                type:  "number",
+                role:  "value",
+                unit:  "min",
+                min:   1,
+                max:   60,
+                read:  true,
+                write: true,
+                def:   10,
+            },
+            native: {},
+        });
+
+        // Read-only extras
+        await this.setObjectNotExistsAsync(`${sn}.isOnline`, {
+            type: "state",
+            common: {
+                name:  "Device online",
+                type:  "boolean",
+                role:  "indicator.reachable",
+                read:  true,
+                write: false,
+                def:   false,
+            },
+            native: {},
+        });
+
+        await this.setObjectNotExistsAsync(`${sn}.isPowerControlPossible`, {
+            type: "state",
+            common: {
+                name:  "Power control possible",
+                type:  "boolean",
+                role:  "indicator",
+                read:  true,
+                write: false,
+                def:   false,
+            },
+            native: {},
+        });
+    }
+
+    // ─── Polling ────────────────────────────────────────────────────────────────
+
+    async _poll() {
+        try {
+            await this._fetchAll();
+            await this.setState("info.connection", true, true);
+        } catch (err) {
+            await this.setState("info.connection", false, true);
+            this.log.warn(`Poll failed: ${err.message}`);
+            if (err.response) {
+                this.log.debug(`HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+            }
+        } finally {
+            // Use adapter.setTimeout — automatically cleaned up on unload
+            const intervalMs = Math.max(10, parseInt(String(this.config.pollInterval), 10) || 60) * 1_000;
+            this._pollTimeout = this.setTimeout(() => this._poll(), intervalMs);
+        }
+    }
+
+    // ─── API calls ──────────────────────────────────────────────────────────────
+
+    /**
+     * @param {string} path
+     */
     async _get(path) {
         const r = await this._api.get(path);
         return r.data;
     }
 
+    /**
+     * @param {string} path
+     * @param {unknown} body
+     */
     async _post(path, body) {
         const r = await this._api.post(path, body);
         return r.data;
@@ -249,115 +408,165 @@ class MyPvAdapter extends utils.Adapter {
     async _checkFirmwareCompatible() {
         try {
             const data = await this._get(`/device/${this._sn}/isFirmwareCompatible`);
-            return data?.isFirmwareCompatible !== "false" && data?.isFirmwareCompatible !== false;
+            const compatible = data?.isFirmwareCompatible !== "false" && data?.isFirmwareCompatible !== false;
+            if (!compatible) this.log.warn("Firmware compatibility check returned false.");
+            return compatible;
         } catch (err) {
-            this.log.warn(`Firmware-Check fehlgeschlagen (${err.message}) – fahre fort.`);
+            this.log.warn(`Firmware check failed (${err.message}) — continuing.`);
             return true;
         }
     }
 
-    async fetchAll() {
+    async _fetchAll() {
         const sn = this._sn;
+
+        // Fetch primary data endpoint (contains all live values)
+        const data = await this._get(`/device/${sn}/data`);
+        this.log.debug(`data: ${JSON.stringify(data)}`);
+        await this._writeStatesFromObject(sn, "data", data);
+
+        // Parallel fetch of secondary endpoints — failures are non-fatal
+        await Promise.allSettled([
+            this._fetchBool(`/device/${sn}/isOnline`,              `${sn}.isOnline`,              d => d === true || d?.isOnline === true || d?.online === true),
+            this._fetchBool(`/device/${sn}/isPowerControlPossible`,`${sn}.isPowerControlPossible`,d => d === true || d?.isPowerControlPossible === true),
+            this._fetchSolarForecast(sn),
+        ]);
+    }
+
+    /**
+     * Fetch a boolean endpoint and set a single state.
+     * @param {string} path
+     * @param {string} stateId
+     * @param {(data: unknown) => boolean} extract
+     */
+    async _fetchBool(path, stateId, extract) {
         try {
-            await this._fetchData(sn);
-            await this._fetchExtras(sn);
-            this.setState("info.connection", true, true);
+            const data = await this._get(path);
+            await this.setState(stateId, { val: extract(data), ack: true });
         } catch (err) {
-            this.setState("info.connection", false, true);
-            this.log.error(`Fehler beim Datenabruf: ${err.message}`);
-            if (err.response) {
-                this.log.debug(`HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
-            }
+            this.log.debug(`${path}: ${err.message}`);
         }
     }
 
-    async _fetchData(sn) {
-        const data = await this._get(`/device/${sn}/data`);
-        this.log.debug(`data: ${JSON.stringify(data)}`);
-        await this._ensureChannel(`${sn}.data`, "Gerätedaten");
-        await this._writeStatesFromObject(sn, "data", data);
-    }
-
-    async _fetchExtras(sn) {
-        // isOnline
-        try {
-            const data = await this._get(`/device/${sn}/isOnline`);
-            const val = data === true || data?.isOnline === true || data?.online === true;
-            await this._ensureState(`${sn}.isOnline`, { name: "Gerät online", type: "boolean", role: "indicator.connected", read: true, write: false });
-            this.setState(`${sn}.isOnline`, { val, ack: true });
-        } catch (err) { this.log.debug(`isOnline: ${err.message}`); }
-
-        // isPowerControlPossible
-        try {
-            const data = await this._get(`/device/${sn}/isPowerControlPossible`);
-            const val = data === true || data?.isPowerControlPossible === true;
-            await this._ensureState(`${sn}.isPowerControlPossible`, { name: "Power Control möglich", type: "boolean", role: "indicator", read: true, write: false });
-            this.setState(`${sn}.isPowerControlPossible`, { val, ack: true });
-        } catch (err) { this.log.debug(`isPowerControlPossible: ${err.message}`); }
-
-        // solarForecast
+    async _fetchSolarForecast(sn) {
         try {
             const data = await this._get(`/device/${sn}/solarForecast`);
-            await this._ensureChannel(`${sn}.solarForecast`, "Solar-Prognose");
+            await this.setObjectNotExistsAsync(`${sn}.solarForecast`, {
+                type: "channel",
+                common: { name: "Solar forecast" },
+                native: {},
+            });
             await this._writeStatesFromObject(sn, "solarForecast", data);
-        } catch (err) { this.log.debug(`solarForecast: ${err.message}`); }
-
-        // Control-Channel
-        await this._ensureChannel(`${sn}.control`, "Steuerung");
-        await this._ensureState(`${sn}.control.setPower`, {
-            name: "Leistungsvorgabe setzen", type: "number", role: "value.power",
-            unit: "W", read: true, write: true, def: 0,
-        });
+        } catch (err) {
+            this.log.debug(`solarForecast: ${err.message}`);
+        }
     }
 
-    async _ensureChannel(id, name) {
-        await this.setObjectNotExistsAsync(id, { type: "channel", common: { name }, native: {} });
+    // ─── Commands ───────────────────────────────────────────────────────────────
+
+    /**
+     * @param {ioBroker.State} state
+     */
+    async _cmdSetPower(state) {
+        const power = parseInt(String(state.val), 10);
+        if (isNaN(power) || power < 0) {
+            this.log.warn(`Invalid power value: ${state.val}`);
+            return;
+        }
+
+        // Read validity duration from control state (ack=true = confirmed value)
+        const validState = await this.getStateAsync(`${this._sn}.control.validForMinutes`);
+        const validForMinutes = validState?.val != null ? parseInt(String(validState.val), 10) : 10;
+
+        try {
+            await this._post(`/device/${this._sn}/power`, {
+                power,
+                validForMinutes:      Math.max(1, Math.min(60, validForMinutes || 10)),
+                timeBoostOverride:    0,
+                timeBoostValue:       0,
+                legionellaBoostBlock: 1,
+            });
+            await this.setState(`${this._sn}.control.setPower`, { val: power, ack: true });
+            this.log.info(`Power setpoint: ${power} W (valid for ${validForMinutes} min)`);
+        } catch (err) {
+            this.log.error(`Failed to set power: ${err.message}`);
+        }
     }
 
-    async _ensureState(id, common) {
-        await this.extendObjectAsync(id, { type: "state", common: { ...common }, native: {} });
-    }
+    // ─── State write helpers ────────────────────────────────────────────────────
 
+    /**
+     * Write all key/value pairs of an API response object as states.
+     * Objects with a scalar factor are converted automatically.
+     * @param {string} sn
+     * @param {string} channel
+     * @param {Record<string, unknown>} data
+     */
     async _writeStatesFromObject(sn, channel, data) {
         if (typeof data !== "object" || data === null) return;
 
-        for (const [key, rawValue] of Object.entries(data)) {
-            if (typeof rawValue === "object" && rawValue !== null && !Array.isArray(rawValue)) {
-                await this._ensureChannel(`${sn}.${channel}.${key}`, key);
-                await this._writeStatesFromObject(sn, `${channel}.${key}`, rawValue);
-                continue;
-            }
+        // Parallelise object creation and state writes for performance
+        await Promise.all(
+            Object.entries(data).map(([key, rawValue]) =>
+                this._writeOneState(sn, channel, key, rawValue)
+            )
+        );
+    }
 
-            const stateId = `${sn}.${channel}.${key}`;
-            const def = FIELD_DEFINITIONS[key];
+    /**
+     * @param {string} sn
+     * @param {string} channel
+     * @param {string} key
+     * @param {unknown} rawValue
+     */
+    async _writeOneState(sn, channel, key, rawValue) {
+        // Recurse into nested objects
+        if (typeof rawValue === "object" && rawValue !== null && !Array.isArray(rawValue)) {
+            await this.setObjectNotExistsAsync(`${sn}.${channel}.${key}`, {
+                type: "channel",
+                common: { name: key },
+                native: {},
+            });
+            await this._writeStatesFromObject(sn, `${channel}.${key}`, /** @type {any} */ (rawValue));
+            return;
+        }
 
-            let val = Array.isArray(rawValue) ? JSON.stringify(rawValue) : rawValue;
+        const stateId = `${sn}.${channel}.${key}`;
+        const def = FIELD_DEFINITIONS[key];
 
-            // Typ erzwingen falls Definition vorhanden (API liefert manchmal String statt Number)
-            if (def?.type === "number" && typeof val === "string") {
-                const parsed = parseFloat(val);
-                val = isNaN(parsed) ? null : parsed;
-            } else if (def?.type === "mixed" && typeof val === "string") {
-                const parsed = parseFloat(val);
-                if (!isNaN(parsed)) val = parsed;
-            } else if (def?.type === "boolean" && typeof val === "string") {
+        // Serialise arrays
+        let val = Array.isArray(rawValue) ? JSON.stringify(rawValue) : rawValue;
+
+        // Coerce type to match definition (API occasionally sends strings for numeric fields)
+        if (def) {
+            if (def.type === "number" && typeof val === "string") {
+                const n = parseFloat(val);
+                val = isNaN(n) ? null : n;
+            } else if (def.type === "mixed" && typeof val === "string") {
+                const n = parseFloat(val);
+                if (!isNaN(n)) val = n;
+            } else if (def.type === "boolean" && typeof val === "string") {
                 val = val === "true" || val === "1";
             }
+        }
 
-            // Skalierungsfaktor anwenden (z.B. 0.1 für Temp/Strom)
-            if (def?.factor && typeof val === "number") {
-                val = Math.round(val * def.factor * 10) / 10;
-            }
+        // Apply scaling factor (e.g. 0.1 for temperatures in 1/10 °C)
+        if (def?.factor && typeof val === "number") {
+            val = Math.round(val * def.factor * 10) / 10;
+        }
 
-            const common = def ? {
+        // Build common definition
+        const common = def
+            ? {
                 name:  def.name,
-                type:  def.type,
+                type:  def.type === "mixed" ? "string" : def.type,
                 role:  def.role,
                 unit:  def.unit,
                 read:  true,
                 write: false,
                 ...(def.states ? { states: def.states } : {}),
-            } : {
+            }
+            : {
                 name:  key,
                 type:  typeof val === "number" ? "number" : typeof val === "boolean" ? "boolean" : "string",
                 role:  "value",
@@ -366,14 +575,16 @@ class MyPvAdapter extends utils.Adapter {
                 write: false,
             };
 
-            await this._ensureState(stateId, common);
-            this.setState(stateId, { val: val ?? null, ack: true });
-        }
+        // extendObjectAsync updates existing objects; setObjectNotExistsAsync would not
+        await this.extendObjectAsync(stateId, { type: "state", common, native: {} });
+        this.setState(stateId, { val: val ?? null, ack: true });
     }
 }
 
+// ─── Entry point ────────────────────────────────────────────────────────────────
+
 if (require.main !== module) {
-    module.exports = (options) => new MyPvAdapter(options);
+    module.exports = /** @param {Partial<utils.AdapterOptions>} options */ (options) => new MyPvAdapter(options);
 } else {
-    new MyPvAdapter();
+    (() => new MyPvAdapter())();
 }
